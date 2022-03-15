@@ -9,4 +9,4 @@ class Client(commands.Bot):
 if __name__ == "__main__":
 	Kaia = Client()
 	Kaia.add_cog(GIFS(Kaia))
-	Kaia.run("NzUxNjMwNDQ1MjI5MTEzNDY0.X1L4Zg.qVUgIdentp-gaenoG6RH44K6EsU")
+	Kaia.run()
