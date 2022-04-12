@@ -35,9 +35,13 @@ class Economy(commands.Cog):
 		else:
 			pass
 
-# ---------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------------------------------------------------
 # Commands
-# ---------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------------------------------------------------
+
+	# ---------------------------------------------------------------------------
+	# Balance
+	# ---------------------------------------------------------------------------
 
 	@commands.command(name = "balance")
 	async def balance(self, context):
@@ -45,6 +49,10 @@ class Economy(commands.Cog):
 		self.set_user(user)
 		wallet, bank = self.get_wallet(user), self.get_bank(user)
 		await context.send(f"Wallet: {wallet}, Bank: {bank}.")
+	
+	# ---------------------------------------------------------------------------
+	# Deposit
+	# ---------------------------------------------------------------------------
 
 	@commands.command(name = "deposit")
 	async def deposit(self, context, *, amount):
@@ -68,6 +76,10 @@ class Economy(commands.Cog):
 		finally:
 			self.save_database()		
 
+	# ---------------------------------------------------------------------------
+	# Withdraw
+	# ---------------------------------------------------------------------------
+
 	@commands.command(name = "withdraw")
 	async def withdraw(self, context, *, amount):
 		user = str(context.author.id)
@@ -89,6 +101,10 @@ class Economy(commands.Cog):
 					await context.send(f"Successfully moved all {self.currency}s to your wallet!")
 		finally:
 			self.save_database()
+	
+	# ---------------------------------------------------------------------------
+	# Gamble
+	# ---------------------------------------------------------------------------
 
 	@commands.command(name = "gamble")
 	async def gamble(self, context, *, amount):
@@ -132,6 +148,10 @@ class Economy(commands.Cog):
 		finally:
 			self.save_database()
 	
+	# ---------------------------------------------------------------------------
+	# Rob
+	# ---------------------------------------------------------------------------
+
 	@commands.command(name = "rob")
 	async def rob(self, context : commands.Context, victim : discord.Member):
 		robber_id = str(context.author.id), 
@@ -187,6 +207,10 @@ class Economy(commands.Cog):
 			print(err)
 		finally:
 			self.save_database()
+	
+	# ---------------------------------------------------------------------------
+	# Give
+	# ---------------------------------------------------------------------------
 
 	@commands.command(name = "give")
 	async def give(self, context, reciever : discord.Member):
@@ -216,3 +240,7 @@ class Economy(commands.Cog):
 					await context.send(f"{context.author.name} successfully gave {reciever.name} all their {self.currency}s!")
 		finally:
 			self.save_database()
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------
+# End
+# ------------------------------------------------------------------------------------------------------------------------------------------------------
