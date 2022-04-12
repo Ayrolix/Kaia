@@ -213,7 +213,7 @@ class Economy(commands.Cog):
 	# ---------------------------------------------------------------------------
 
 	@commands.command(name = "give")
-	async def give(self, context, reciever : discord.Member):
+	async def give(self, context, reciever : discord.Member, amount):
 		giver_id = str(context.author.id)
 		reciever_id = str(reciever.id)
 		self.set_user(giver_id)
