@@ -11,29 +11,11 @@ class Economy(commands.Cog):
 		with open("Wealth.json", "r") as f:
 			self.data = json.load(f)
 			f.close()
-	
-	def save_database(self) -> None:
+
+	def commit_database(self):
 		with open("Wealth.json", "w") as f:
 			json.dump(self.data, f, indent = 4)
-
-	def get_wallet(self, user_id):
-		return self.data[user_id]["wallet"]
-
-	def get_bank(self, user_id):
-		return self.data[user_id]["bank"]
-
-	def set_wallet(self, user_id, amount):
-		self.data[user_id]["wallet"] = amount
-	
-	def set_bank(self, user_id, amount):
-		self.data[user_id]["bank"] = amount
-	
-	def set_user(self, user_id):
-		if user_id not in self.data:
-			self.data[user_id] = {"wallet" : 0, "bank" : 5000, "inventory" : []}
-			pass
-		else:
-			pass
+			f.close()
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------
 # Commands
@@ -43,203 +25,193 @@ class Economy(commands.Cog):
 	# Balance
 	# ---------------------------------------------------------------------------
 
-	@commands.command(name = "balance")
-	async def balance(self, context):
-		user = str(context.author.id)
-		self.set_user(user)
-		wallet, bank = self.get_wallet(user), self.get_bank(user)
-		await context.send(f"Wallet: {wallet}, Bank: {bank}.")
+	@commands.command(name = "balance", aliases = ["wealth"])
+	async def wealth(self, context : commands.Context):
+		executor = context.author.name.lower()
+		await context.send("Wallet : {0} {2} | Bank : {1} {2}".format(self.data[executor]["wallet"], self.data[executor]["bank"], self.currency))
 	
 	# ---------------------------------------------------------------------------
 	# Deposit
 	# ---------------------------------------------------------------------------
 
 	@commands.command(name = "deposit")
-	async def deposit(self, context, *, amount):
-		user = str(context.author.id)
-		self.set_user(user)
-		wallet, bank = self.get_wallet(user), self.get_bank(user)
+	async def deposit(self, context : commands.Context, *, amount):
+		executor = context.author.name.lower()
+		self.check_for_user(executor)
+		wallet = self.data[executor]["wallet"]
+		bank = self.data[executor]["bank"]
+		print(bank)
 		try:
 			amount = abs(int(amount))
 			if amount <= wallet:
-				wallet -= amount ; bank += amount
-				self.data[user].update({"wallet": wallet, "bank": bank})
-				await context.send(f"Successfully moved {amount} {self.currency}s to your bank!")
+				wallet -= amount
+				bank += amount
+				self.data[executor]["wallet"] = wallet
+				self.data[executor]["bank"] = bank
+				await context.send("Moved {0} {1} to the bank.".format(amount, self.currency))
 			else:
-				await context.send("You don't have enough to deposit into your bank.")
-		except Exception as err:
-			if isinstance(err, ValueError):
+				await context.send("Not enough to deposit.")
+		except Exception as error:
+			if isinstance(error, ValueError):
 				if amount == "all":
-					bank += wallet ; wallet -= wallet
-					self.data[user].update({"wallet": wallet, "bank": bank})
-					await context.send(f"Successfully moved all {self.currency}s to your bank!")
+					bank += wallet
+					wallet -= wallet
+					self.data[executor]["wallet"] = wallet
+					self.data[executor]["bank"] = bank
+					await context.send("Moved all {0} into the bank.".format(self.currency))
 		finally:
-			self.save_database()		
+			self.commit_database()
 
 	# ---------------------------------------------------------------------------
 	# Withdraw
 	# ---------------------------------------------------------------------------
 
 	@commands.command(name = "withdraw")
-	async def withdraw(self, context, *, amount):
-		user = str(context.author.id)
-		self.set_user(user)
-		wallet, bank = self.get_wallet(user), self.get_bank(user)
+	async def withdraw(self, context : commands.Context, *, amount):
+		executor = context.author.name.lower()
+		self.check_for_user(executor)
+		wallet = self.data[executor]["wallet"]
+		bank = self.data[executor]["bank"]
+		print(bank)
 		try:
 			amount = abs(int(amount))
-			if amount <= bank:
-				wallet += amount ; bank -= amount
-				self.data[user].update({"wallet": wallet, "bank": bank})
-				await context.send(f"Successfully moved {amount} {self.currency}s to your wallet!")
+			if amount <= wallet:
+				wallet += amount
+				bank -= amount
+				self.data[executor]["wallet"] = wallet
+				self.data[executor]["bank"] = bank
+				await context.send("Moved {0} {1} to your wallet.".format(amount, self.currency))
 			else:
-				await context.send("You don't have enough to withdraw from your bank.")
-		except Exception as err:
-			if isinstance(err, ValueError):
+				await context.send("Not enough to withdraw.")
+		except Exception as error:
+			if isinstance(error, ValueError):
 				if amount == "all":
-					wallet += bank ; bank -= bank;
-					self.data[user].update({"wallet": wallet, "bank": bank})
-					await context.send(f"Successfully moved all {self.currency}s to your wallet!")
-		finally:
-			self.save_database()
+					wallet += bank
+					bank -= bank
+					self.data[executor]["wallet"] = wallet
+					self.data[executor]["bank"] = bank
+					await context.send("Moved all {0} to your wallet.".format(self.currency))
+		finally:		
+			self.commit_database()
 	
 	# ---------------------------------------------------------------------------
 	# Gamble
 	# ---------------------------------------------------------------------------
 
-	@commands.command(name = "gamble")
-	async def gamble(self, context, *, amount):
-		user = str(context.author.id)
-		self.set_user(user)
-		wallet = self.get_wallet(user)
+	@commands.command(name = "gamble", aliases = ["bet"])
+	async def gamble(self, context : commands.Context, *, amount):
+		executor = context.author.name.lower()
+		self.check_for_user(executor)
+		wallet = self.data[executor]["wallet"]
 		try:
 			amount = abs(int(amount))
 			if wallet >= amount:
-				luck = random.choices([0, 1, 2], [75, 50, 1], k = 1)[0]
-				if luck == 0:
+				gambling_rng = random.choice([0, 1])
+				if gambling_rng == 0:
 					wallet -= amount
-					self.data[user].update({"wallet": wallet})
+					self.data[executor]["wallet"] = wallet
 					await context.send("You lost! Better luck next time.")
-				elif luck == 1:
+				elif gambling_rng == 1:
 					wallet += amount * 2
-					self.data[user].update({"wallet": wallet})
-					await context.send(f"You won {amount * 2} {self.currency}s!")
-				elif luck == 2:
-					wallet += amount ** 2
-					self.data[user].update({"wallet": wallet})
-					await context.send(f"Lucky individual aren't you {context.author.name}! You won {amount ** 2} {self.currency}s!")
-			else:
-				await context.send("You don't have that much in your wallet to bet!")
-		except Exception as err:
-			if isinstance(err, ValueError):
+					self.data[executor]["wallet"] = wallet
+					await context.send("You won: {0} {1}!".format(amount * 2, self.currency))
+				else:
+					await context.send("You don't have that much in your wallet to bet!")
+		except Exception as error:
+			if isinstance(error, ValueError):
 				if amount == "all":
-					luck = random.choices([0, 1, 2], [75, 50, 1], k = 1)[0]
-					if luck == 0:
+					gambling_rng = random.choice([0, 1])
+					if gambling_rng == 0:
 						wallet -= wallet
-						self.data[user].update({"wallet": wallet})
+						self.data[executor]["wallet"] = wallet
 						await context.send("You lost! Better luck next time.")
-					elif luck == 1:
-						wallet += wallet * 2
-						self.data[user].update({"wallet": wallet})
-						await context.send(f"You won {wallet * 2} {self.currency}s!")
-					elif luck == 2:
-						wallet += wallet ** 2
-						self.data[user].update({"wallet": wallet})
-						await context.send(f"Lucky individual aren't you {context.author.name}! You won {wallet ** 2} {self.currency}s!")
+					elif gambling_rng == 1:
+						wallet = wallet * 2
+						self.data[executor]["wallet"] = wallet
+						await context.send("You won: {0} {1}!".format(wallet * 2, self.currency))
 		finally:
-			self.save_database()
+			self.commit_database()
 	
 	# ---------------------------------------------------------------------------
 	# Rob
 	# ---------------------------------------------------------------------------
 
-	@commands.command(name = "rob")
-	async def rob(self, context : commands.Context, victim : discord.Member):
-		robber_id = str(context.author.id), 
-		victim_id = str(victim.id)
-		self.set_user(robber_id)
-		self.set_user(victim_id)
-		r_wallet = self.get_wallet(robber_id)
-		v_wallet = self.get_wallet(victim_id)
-		try:
-			luck = random.choices([0, 1, 2], [75, 50, 1], k = 1)[0]
-			if luck == 0:
-				if r_wallet != 0:
-					if r_wallet > 100:
-						dropped = random.randint(1, 100)
-						r_wallet -= dropped
-						self.data[robber_id].update({"wallet": r_wallet})
-						await context.send(f"{context.author.name} underestimated {victim.name} and dropped {dropped} {self.currency}s trying to get away.")
-					else:
-						dropped = random.randint(1, r_wallet)
-						r_wallet -= dropped
-						self.data[robber_id].update({"wallet": r_wallet})
-						await context.send(f"{context.author.name} underestimated {victim.name} and dropped {dropped} {self.currency}s trying to get away.")
+	@commands.command(name = "rob", aliases = ["steal"])
+	async def rob(self, context : commands.Context, other : discord.Member):
+		executor = context.author.name.lower()
+		receiver = other.name.lower()
+		self.check_for_user(executor)
+		self.check_for_user(receiver)
+		if executor != receiver:
+			executor_wallet = self.data[executor]["wallet"]
+			receiver_wallet = self.data[receiver]["wallet"]
+			robbery_rng = random.choice([0, 1, 2])
+			if robbery_rng == 0:
+				if executor_wallet != 0:
+					lost_amount = random.randint(1, executor_wallet)
+					executor_wallet -= lost_amount
+					self.data[executor]["wallet"] = executor_wallet
+					await context.send("{0} tried to rob {1} and dropped {2} {3}.".format(executor.capitalize(), receiver.capitalize(), lost_amount, self.currency))
 				else:
-					await context.send(f"{context.author.name} tried robbing <@{victim_id}> but it didn't go according to plan.")
-			elif luck == 1:
-				if v_wallet != 0:
-					if v_wallet > 100:
-						stolen = random.randint(1, 100)
-						v_wallet -= stolen
-						r_wallet += stolen
-						self.data[victim_id].update({"wallet": v_wallet})
-						self.data[robber_id].update({"wallet": r_wallet})
-						await context.send(f"{context.author.name} stole {stolen} from <@{victim_id}>.")
-					else: # In case v_wallet is less than 100
-						stolen = random.randint(1, v_wallet)
-						v_wallet -= stolen
-						r_wallet += stolen
-						self.data[victim_id].update({"wallet": v_wallet})
-						self.data[robber_id].update({"wallet": r_wallet})
-						await context.send(f"{context.author.name} stole {stolen} from <@{victim_id}>.")
-				else:
-					await context.send(f"{context.author.name} tried robbing <@{victim_id}> but their either broke or smart.")
-			elif luck == 2:
-				if v_wallet != 0:
-					stolen = random.randint(1, v_wallet)
-					v_wallet -= stolen ; r_wallet += stolen
-					self.data[victim_id].update({"wallet": v_wallet})
-					self.data[robber_id].update({"wallet": r_wallet})
-					await context.send(f"It was not <@{victim_id}>'s lucky day. {context.author.name} stole {stolen} {self.currency}s.")
-				else:
-					await context.send(f"{context.author.name} tried robbing <@{victim_id}> but their either broke or smart.")
-		except Exception as err:
-			print(err)
-		finally:
-			self.save_database()
+					await context.send("{0} tried to rob {1} but failed miserably.".format(executor.capitalize(), receiver.capitalize()))
+			elif robbery_rng == 1:
+				if receiver_wallet >= 100:
+					stolen_amount = random.randint(1, 100)
+					receiver_wallet -= stolen_amount
+					executor_wallet += stolen_amount
+					self.data[executor]["wallet"] = executor_wallet
+					self.data[receiver]["wallet"] = receiver_wallet
+					await context.send("{0} robbed {1} of {2} {3}.".format(executor.capitalize(), receiver.capitalize(), stolen_amount, self.currency))
+				elif receiver_wallet < 100:
+					stolen_amount = random.randint(1, receiver_wallet)
+					receiver_wallet -= stolen_amount
+					executor_wallet += stolen_amount
+					self.data[executor]["wallet"] = executor_wallet
+					self.data[receiver]["wallet"] = receiver_wallet
+					await context.send("{0} robbed {1} of {2} {3}.".format(executor.capitalize(), receiver.capitalize(), stolen_amount, self.currency))
+			elif robbery_rng == 2:
+				stolen_amount = random.randint(1, receiver_wallet)
+				receiver_wallet -= stolen_amount
+				executor_wallet += stolen_amount
+				self.data[executor]["wallet"] = executor_wallet
+				self.data[receiver]["wallet"] = receiver_wallet
+				await context.send("{0} robbed {1} of {2} {3}.".format(executor.capitalize(), receiver.capitalize(), stolen_amount, self.currency))
+		else:
+			await context.send("Robbing yourself is pointless.")
 	
 	# ---------------------------------------------------------------------------
 	# Give
 	# ---------------------------------------------------------------------------
 
 	@commands.command(name = "give")
-	async def give(self, context, reciever : discord.Member, amount):
-		giver_id = str(context.author.id)
-		reciever_id = str(reciever.id)
-		self.set_user(giver_id)
-		self.set_user(reciever_id)
-		g_wallet = self.get_wallet(giver_id)
-		r_wallet = self.get_wallet(reciever_id)
-		try:
-			amount = abs(int(amount))
-			if g_wallet >= amount:
-				r_wallet += amount
-				g_wallet -= amount
-				self.data[giver_id].update({"wallet": g_wallet})
-				self.data[reciever_id].update({"wallet": r_wallet})
-				await context.send(f"{context.author.name} successfully gave {reciever.name} {amount} {self.currency}s!")
-			else:
-				await context.send("You cannot give more than you have!")
-		except Exception as err:
-			if isinstance(err, ValueError):
-				if amount == "all":
-					r_wallet += g_wallet
-					g_wallet -= g_wallet
-					self.data[giver_id].update({"wallet": g_wallet})
-					self.data[reciever_id].update({"wallet": r_wallet})
-					await context.send(f"{context.author.name} successfully gave {reciever.name} all their {self.currency}s!")
-		finally:
-			self.save_database()
+	async def give(self, context : commands.Context, other : discord.Member, amount):
+		executor = context.author.name.lower()
+		receiver = other.name.lower()
+		self.check_for_user(executor)
+		self.check_for_user(receiver)
+		if executor != receiver:
+			executor_wallet = self.data[executor]["wallet"]
+			receiver_wallet = self.data[receiver]["wallet"]
+			try:
+				amount = abs(int(amount))
+				if executor_wallet >= amount:
+					executor_wallet -= amount
+					receiver_wallet += amount
+					self.data[executor]["wallet"] = executor_wallet
+					self.data[receiver]["wallet"] = receiver_wallet
+					await context.send("{0} gave {1} {2} {3}.".format(executor.capitalize(), receiver.capitalize(), amount, self.currency))
+				else:
+					await context.send("You cannot give more than you have.")
+			except Exception as error:
+				if isinstance(error, ValueError):
+					if amount == "all":
+						receiver_wallet += executor_wallet
+						executor_wallet -= executor_wallet
+						self.data[executor]["wallet"] = executor_wallet
+						self.data[receiver]["wallet"] = receiver_wallet
+						await context.send("{0} gave {1} {2} {3}.".format(executor.capitalize(), receiver.capitalize(), amount, self.currency))
+			finally:
+				self.commit_database()
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------
 # End
