@@ -1,5 +1,6 @@
 import discord
 
+from Misc import Misc
 from GIFS import GIFS
 from Economy import Economy
 from discord.ext import commands
@@ -12,4 +13,5 @@ if __name__ == "__main__":
 	Kaia = Client()
 	Kaia.add_cog(GIFS(Kaia))
 	Kaia.add_cog(Economy(Kaia))
+	Kaia.add_cog(Misc(Kaia))
 	Kaia.run()
