@@ -71,3 +71,9 @@ Most commands show discord embeds with relevant gifs for the command as well as 
 - Give
 	- Command Usage
 		- $give <user_mention> <amount / all>
+
+### Misc Commands
+
+- Roll
+    - Command Usage
+        - $roll <num_of_dice> <num_of_faces>
