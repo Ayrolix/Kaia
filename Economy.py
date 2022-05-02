@@ -1,8 +1,8 @@
 import random
 
-from Types.data_types import *
 from discord.ext import commands
 from discord import Embed, Member
+from data_types import User, Database
 from discord.ext.commands import Cog, Context, BucketType
 
 
