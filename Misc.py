@@ -11,12 +11,12 @@ class Misc(commands.Cog):
 	@commands.command(name = "roll")
 	async def roll(self, context: Context, num_of_dice : int, num_of_faces : int):
 		results = []
-		if num_of_dice <= 188:
-			if num_of_faces <= 366:
-				for x in range(num_of_dice):
-					results.append(random.randint(1, num_of_faces))
-				await context.send(f"Results: {results}")
-			else:
-				await context.send("Amount of faces per die surpasses limitation.")
-		else:
-			await context.send("Amount of dice surpasses limitation.")
+		if num_of_dice > 188:
+			await context.send("You cannot roll more than 188 dice.")
+			return
+		if num_of_faces > 366:
+			await context.send("You cannot roll dice with more than 366 faces.")
+			return
+		for i in range(num_of_dice):
+			results.append(random.randint(1, num_of_faces))
+		await context.send(results)

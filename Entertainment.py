@@ -1,3 +1,4 @@
+from ast import alias
 import time
 import json
 import random
@@ -18,6 +19,13 @@ class Entertainment(Cog):
 	# ---------------------------------------------------------------------------------------------------------------------
 	# GIFS
 	# ---------------------------------------------------------------------------------------------------------------------
+
+	@commands.command(name = "slap", aliases = ["slaps"])
+	async def slap(self, context: Context, member: str):
+		if member is None:
+			await context.send("You need to specify a member to slap.")
+			return
+		
 
 	@commands.command(name = "Slap", aliases = ["Slaps", "Slp"])
 	async def slap(self, context: Context, other: str = None):
